@@ -5,66 +5,45 @@ let app;
 async function createNestApp() {
   if (!app) {
     try {
-      // Intentar múltiples rutas para AppModule basado en el directorio de trabajo
-      let AppModule;
       const fs = require('fs');
       const path = require('path');
       
-      // Primero, exploremos la estructura de directorios
-      console.log('📁 Directorio actual:', process.cwd());
-      console.log('📁 __dirname:', __dirname);
-      
-      const paths = [
-        '../dist/src/app.module',
-        '../dist/app.module', 
-        '/var/task/dist/src/app.module',
-        './dist/src/app.module',
-        'dist/src/app.module',
-        path.join(process.cwd(), 'dist', 'src', 'app.module'),
-        path.join(__dirname, '..', 'dist', 'src', 'app.module')
-      ];
-      
-      let lastError;
-      for (const modulePath of paths) {
-        try {
-          console.log(`🔍 Intentando cargar desde: ${modulePath}`);
+      // DEBUGGING: Primero listar toda la estructura de archivos
+      let fileStructure = {};
+      try {
+        fileStructure.rootFiles = fs.readdirSync('/var/task');
+        console.log('📂 /var/task:', fileStructure.rootFiles);
+        
+        if (fileStructure.rootFiles.includes('dist')) {
+          fileStructure.distFiles = fs.readdirSync('/var/task/dist');
+          console.log('� /var/task/dist:', fileStructure.distFiles);
           
-          // Verificar si el archivo existe
-          if (fs.existsSync(modulePath + '.js')) {
-            console.log(`✅ Archivo encontrado: ${modulePath}.js`);
-          } else {
-            console.log(`❌ Archivo NO encontrado: ${modulePath}.js`);
+          if (fileStructure.distFiles.includes('src')) {
+            fileStructure.distSrcFiles = fs.readdirSync('/var/task/dist/src');
+            console.log('📂 /var/task/dist/src:', fileStructure.distSrcFiles);
           }
-          
-          AppModule = require(modulePath).AppModule;
-          console.log(`✅ AppModule cargado exitosamente desde: ${modulePath}`);
-          break;
-        } catch (error) {
-          console.log(`❌ Falló ${modulePath}: ${error.message}`);
-          lastError = error;
         }
+      } catch (e) {
+        fileStructure.error = e.message;
       }
       
-      if (!AppModule) {
-        // Listar contenido del directorio para debugging
-        try {
-          const rootFiles = fs.readdirSync('/var/task');
-          console.log('📂 Contenido de /var/task:', rootFiles);
-          
-          if (rootFiles.includes('dist')) {
-            const distFiles = fs.readdirSync('/var/task/dist');
-            console.log('📂 Contenido de /var/task/dist:', distFiles);
-            
-            if (distFiles.includes('src')) {
-              const srcFiles = fs.readdirSync('/var/task/dist/src');
-              console.log('📂 Contenido de /var/task/dist/src:', srcFiles);
-            }
-          }
-        } catch (e) {
-          console.log('Error listando directorios:', e.message);
-        }
-        
-        throw new Error(`AppModule no encontrado en ninguna ruta. Último error: ${lastError.message}`);
+      // Si no hay carpeta dist, lanzar error con información
+      if (!fileStructure.rootFiles || !fileStructure.rootFiles.includes('dist')) {
+        throw new Error(`No se encontró carpeta dist. Estructura: ${JSON.stringify(fileStructure)}`);
+      }
+      
+      // Intentar cargar AppModule
+      let AppModule;
+      const modulePath = '/var/task/dist/src/app.module';
+      
+      console.log(`� Intentando cargar AppModule desde: ${modulePath}`);
+      
+      if (fs.existsSync(modulePath + '.js')) {
+        console.log(`✅ Archivo ${modulePath}.js existe`);
+        AppModule = require(modulePath).AppModule;
+        console.log(`✅ AppModule cargado exitosamente`);
+      } else {
+        throw new Error(`Archivo ${modulePath}.js no encontrado. Estructura: ${JSON.stringify(fileStructure)}`);
       }
       
       app = await NestFactory.create(AppModule, {
