@@ -96,6 +96,23 @@ module.exports = async (req, res) => {
     return expressApp(req, res);
   } catch (error) {
     console.error('Handler error:', error);
+    
+    // Debugging: listar archivos en el directorio
+    const fs = require('fs');
+    let fileInfo = {};
+    
+    try {
+      fileInfo.rootFiles = fs.readdirSync('/var/task');
+      if (fileInfo.rootFiles.includes('dist')) {
+        fileInfo.distFiles = fs.readdirSync('/var/task/dist');
+        if (fileInfo.distFiles.includes('src')) {
+          fileInfo.distSrcFiles = fs.readdirSync('/var/task/dist/src');
+        }
+      }
+    } catch (e) {
+      fileInfo.listError = e.message;
+    }
+    
     return res.status(500).json({
       error: 'Serverless function failed',
       message: error.message,
@@ -104,7 +121,8 @@ module.exports = async (req, res) => {
         cwd: process.cwd(),
         nodeEnv: process.env.NODE_ENV,
         hasDB: !!process.env.DB_HOST
-      }
+      },
+      fileStructure: fileInfo
     });
   }
 };
