@@ -46,16 +46,16 @@ async function createNestApp() {
         }
       }
       
-      // Intentar cargar AppModule desde carpeta build
+      // Intentar cargar SimpleAppModule (sin TypeORM) desde carpeta build
       let AppModule;
-      const modulePath = '/var/task/build/dist/src/app.module';
+      const simpleModulePath = '/var/task/build/dist/src/simple-app.module';
       
-      console.log(`🔍 Intentando cargar AppModule desde: ${modulePath}`);
+      console.log(`🔍 Intentando cargar SimpleAppModule desde: ${simpleModulePath}`);
       
-      if (fs.existsSync(modulePath + '.js')) {
-        console.log(`✅ Archivo ${modulePath}.js existe`);
-        AppModule = require(modulePath).AppModule;
-        console.log(`✅ AppModule cargado exitosamente`);
+      if (fs.existsSync(simpleModulePath + '.js')) {
+        console.log(`✅ Archivo ${simpleModulePath}.js existe`);
+        AppModule = require(simpleModulePath).SimpleAppModule;
+        console.log(`✅ SimpleAppModule cargado exitosamente`);
       } else {
         // Actualizar fileStructure para mostrar build también
         if (fileStructure.rootFiles && fileStructure.rootFiles.includes('build')) {
@@ -67,7 +67,7 @@ async function createNestApp() {
             }
           }
         }
-        throw new Error(`Archivo ${modulePath}.js no encontrado. Estructura: ${JSON.stringify(fileStructure)}`);
+        throw new Error(`Archivo ${simpleModulePath}.js no encontrado. Estructura: ${JSON.stringify(fileStructure)}`);
       }
       
       app = await NestFactory.create(AppModule, {
