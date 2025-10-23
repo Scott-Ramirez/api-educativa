@@ -16,33 +16,6 @@ async function bootstrap() {
     }
   });
 
-  // Middleware para logging de requests de imágenes ANTES de servir archivos
-  app.use('/uploads', (req, res, next) => {
-    Logger.log(`🖼️ Request de imagen: ${req.method} ${req.url}`);
-    Logger.log(`🔍 Headers: ${JSON.stringify(req.headers)}`);
-    next();
-  });
-
-  // Servir archivos estáticos para imágenes con opciones específicas
-  const uploadsPath = join(__dirname, '..', 'uploads');
-  Logger.log(`📁 Sirviendo archivos estáticos desde: ${uploadsPath}`);
-  
-  app.use('/uploads', express.static(uploadsPath, {
-    // Configurar headers para compatibility con vercel
-    setHeaders: (res, path) => {
-      res.set({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Cache-Control': 'public, max-age=31536000',
-        'Content-Type': path.endsWith('.jpg') || path.endsWith('.jpeg') ? 'image/jpeg' : 
-                       path.endsWith('.png') ? 'image/png' : 
-                       path.endsWith('.gif') ? 'image/gif' : 'application/octet-stream'
-      });
-      Logger.log(`� Sirviendo archivo: ${path}`);
-    }
-  }));
-
   // Prefijo global
   const globalPrefix = 'api/v1';
   app.setGlobalPrefix(globalPrefix);
@@ -69,7 +42,7 @@ async function bootstrap() {
     SwaggerModule.setup('api-docs', app, document);
   }
 
-  // Puerto dinámico para Vercel
+  // Puerto dinámico para desarrollo
   const configService = app.get(ConfigService);
   const port = Number(process.env.PORT || configService.get('PORT') || 3000);
 

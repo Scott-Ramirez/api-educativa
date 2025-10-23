@@ -1,12 +1,11 @@
-// Punto de entrada para Vercel Serverless Functions
 const { NestFactory } = require('@nestjs/core');
 
 let app;
 
-async function bootstrap() {
+async function createNestApp() {
   if (!app) {
     try {
-      // Intentar múltiples rutas para encontrar AppModule
+      // Intentar múltiples rutas para AppModule
       let AppModule;
       try {
         AppModule = require('../dist/src/app.module').AppModule;
@@ -14,16 +13,13 @@ async function bootstrap() {
         try {
           AppModule = require('../dist/app.module').AppModule;
         } catch (e2) {
-          try {
-            AppModule = require(__dirname + '/../dist/src/app.module').AppModule;
-          } catch (e3) {
-            throw new Error(`No se pudo encontrar AppModule. Errores: ${e1.message}, ${e2.message}, ${e3.message}`);
-          }
+          console.error('No se pudo cargar AppModule:', e1.message, e2.message);
+          throw new Error(`AppModule no encontrado. Intenté: dist/src/app.module y dist/app.module`);
         }
       }
       
       app = await NestFactory.create(AppModule, {
-        logger: ['error', 'warn'],
+        logger: console,
       });
       
       app.enableCors({
@@ -32,9 +28,12 @@ async function bootstrap() {
         credentials: true,
       });
       
+      app.setGlobalPrefix('api/v1');
       await app.init();
+      
+      console.log('✅ NestJS App inicializada correctamente');
     } catch (error) {
-      console.error('Bootstrap error:', error);
+      console.error('❌ Error inicializando NestJS:', error);
       throw error;
     }
   }
@@ -43,18 +42,19 @@ async function bootstrap() {
 
 module.exports = async (req, res) => {
   try {
-    const nestApp = await bootstrap();
+    const nestApp = await createNestApp();
     const expressApp = nestApp.getHttpAdapter().getInstance();
     return expressApp(req, res);
   } catch (error) {
     console.error('Handler error:', error);
-    return res.status(500).json({ 
-      message: 'Internal server error',
-      error: error.message,
+    return res.status(500).json({
+      error: 'Serverless function failed',
+      message: error.message,
       debug: {
         __dirname,
         cwd: process.cwd(),
-        env: process.env.NODE_ENV
+        nodeEnv: process.env.NODE_ENV,
+        hasDB: !!process.env.DB_HOST
       }
     });
   }
