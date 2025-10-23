@@ -27,9 +27,23 @@ async function createNestApp() {
         fileStructure.error = e.message;
       }
       
-      // Si no hay carpeta dist, lanzar error con información
-      if (!fileStructure.rootFiles || !fileStructure.rootFiles.includes('dist')) {
-        throw new Error(`No se encontró carpeta dist. Estructura: ${JSON.stringify(fileStructure)}`);
+      // Buscar carpeta build en lugar de dist
+      if (!fileStructure.rootFiles || !fileStructure.rootFiles.includes('build')) {
+        throw new Error(`No se encontró carpeta build. Estructura: ${JSON.stringify(fileStructure)}`);
+      }
+      
+      // Explorar contenido de build
+      fileStructure.buildFiles = fs.readdirSync('/var/task/build');
+      console.log('📂 /var/task/build:', fileStructure.buildFiles);
+      
+      if (fileStructure.buildFiles.includes('dist')) {
+        fileStructure.buildDistFiles = fs.readdirSync('/var/task/build/dist');
+        console.log('📂 /var/task/build/dist:', fileStructure.buildDistFiles);
+        
+        if (fileStructure.buildDistFiles.includes('src')) {
+          fileStructure.buildDistSrcFiles = fs.readdirSync('/var/task/build/dist/src');
+          console.log('📂 /var/task/build/dist/src:', fileStructure.buildDistSrcFiles);
+        }
       }
       
       // Intentar cargar AppModule desde carpeta build
