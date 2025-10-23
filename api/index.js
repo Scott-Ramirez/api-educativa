@@ -46,31 +46,49 @@ async function createNestApp() {
         }
       }
       
-      // Intentar cargar ProgressiveAppModule primero, luego UltraSimple como fallback
+      // Intentar cargar SimpleStudentsAppModule primero, luego Progressive como fallback
       let AppModule;
+      const simpleStudentsModulePath = '/var/task/build/dist/src/simple-students-app.module';
       const progressiveModulePath = '/var/task/build/dist/src/progressive-app.module';
       const ultraSimpleModulePath = '/var/task/build/dist/src/ultra-simple-app.module';
       
-      console.log(`🔍 Intentando cargar ProgressiveAppModule desde: ${progressiveModulePath}`);
+      console.log(`🔍 Intentando cargar SimpleStudentsAppModule desde: ${simpleStudentsModulePath}`);
       
-      if (fs.existsSync(progressiveModulePath + '.js')) {
-        console.log(`✅ Archivo ${progressiveModulePath}.js existe`);
+      if (fs.existsSync(simpleStudentsModulePath + '.js')) {
+        console.log(`✅ Archivo ${simpleStudentsModulePath}.js existe`);
+        try {
+          AppModule = require(simpleStudentsModulePath).SimpleStudentsAppModule;
+          console.log(`✅ SimpleStudentsAppModule cargado exitosamente`);
+        } catch (simpleStudentsError) {
+          console.log(`❌ Error cargando SimpleStudentsAppModule:`, simpleStudentsError.message);
+          console.log(`🔄 Fallback a ProgressiveAppModule...`);
+          
+          if (fs.existsSync(progressiveModulePath + '.js')) {
+            try {
+              AppModule = require(progressiveModulePath).ProgressiveAppModule;
+              console.log(`✅ ProgressiveAppModule cargado como fallback`);
+            } catch (progressiveError) {
+              console.log(`❌ Error cargando ProgressiveAppModule:`, progressiveError.message);
+              AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
+              console.log(`✅ UltraSimpleAppModule cargado como último fallback`);
+            }
+          } else {
+            AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
+            console.log(`✅ UltraSimpleAppModule cargado como fallback`);
+          }
+        }
+      } else if (fs.existsSync(progressiveModulePath + '.js')) {
+        console.log(`⚠️ SimpleStudentsAppModule no existe, usando ProgressiveAppModule`);
         try {
           AppModule = require(progressiveModulePath).ProgressiveAppModule;
           console.log(`✅ ProgressiveAppModule cargado exitosamente`);
         } catch (progressiveError) {
           console.log(`❌ Error cargando ProgressiveAppModule:`, progressiveError.message);
-          console.log(`🔄 Fallback a UltraSimpleAppModule...`);
-          
-          if (fs.existsSync(ultraSimpleModulePath + '.js')) {
-            AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
-            console.log(`✅ UltraSimpleAppModule cargado como fallback`);
-          } else {
-            throw new Error(`Ambos módulos fallaron. Progressive error: ${progressiveError.message}`);
-          }
+          AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
+          console.log(`✅ UltraSimpleAppModule cargado como fallback`);
         }
       } else if (fs.existsSync(ultraSimpleModulePath + '.js')) {
-        console.log(`⚠️ ProgressiveAppModule no existe, usando UltraSimpleAppModule`);
+        console.log(`⚠️ Solo UltraSimpleAppModule disponible`);
         AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
         console.log(`✅ UltraSimpleAppModule cargado exitosamente`);
       } else {
