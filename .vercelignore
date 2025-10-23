@@ -1,0 +1,30 @@
+node_modules
+!node_modules/@nestjs
+!node_modules/bcrypt
+!node_modules/class-transformer
+!node_modules/class-validator
+!node_modules/cloudinary
+!node_modules/express
+!node_modules/multer
+!node_modules/mysql2
+!node_modules/passport
+!node_modules/passport-jwt
+!node_modules/reflect-metadata
+!node_modules/rxjs
+!node_modules/swagger-ui-express
+!node_modules/typeorm
+
+# Incluir archivos necesarios
+!dist
+!api
+!package.json
+
+# Excluir archivos innecesarios
+src
+test
+*.md
+.git
+.env*
+tsconfig*.json
+nest-cli.json
+eslint.config.mjs
