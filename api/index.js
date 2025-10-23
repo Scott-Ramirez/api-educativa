@@ -46,6 +46,23 @@ async function createNestApp() {
         }
       }
       
+      // Verificar dependencias críticas e intentar require dinámico
+      console.log('🔍 Verificando dependencias críticas...');
+      
+      try {
+        require('@nestjs/config');
+        console.log('✅ @nestjs/config está disponible');
+      } catch (configError) {
+        console.log('❌ @nestjs/config no disponible:', configError.message);
+      }
+      
+      try {
+        require('@nestjs/typeorm');
+        console.log('✅ @nestjs/typeorm está disponible');
+      } catch (typeormError) {
+        console.log('❌ @nestjs/typeorm no disponible:', typeormError.message);
+      }
+      
       // Intentar cargar AppModule original desde carpeta build
       let AppModule;
       const appModulePath = '/var/task/build/dist/src/app.module';
@@ -59,18 +76,39 @@ async function createNestApp() {
           console.log(`✅ AppModule cargado exitosamente`);
         } catch (appModuleError) {
           console.log(`❌ Error cargando AppModule:`, appModuleError.message);
-          console.log(`Stack:`, appModuleError.stack);
           
-          // Si el AppModule falla, mostrar el error detallado
+          // Si falla por dependencias, intentar instalarlas dinámicamente
+          if (appModuleError.message.includes('@nestjs/config')) {
+            console.log('🔧 Intentando cargar @nestjs/config desde node_modules...');
+            
+            // Intentar diferentes rutas para @nestjs/config
+            const possiblePaths = [
+              '/var/task/node_modules/@nestjs/config',
+              './node_modules/@nestjs/config',
+              '../node_modules/@nestjs/config'
+            ];
+            
+            for (const path of possiblePaths) {
+              if (fs.existsSync(path)) {
+                console.log(`✅ Encontrado @nestjs/config en: ${path}`);
+                break;
+              } else {
+                console.log(`❌ No encontrado en: ${path}`);
+              }
+            }
+          }
+          
           return res.status(500).json({
             error: 'Error loading AppModule',
             message: appModuleError.message,
-            stack: appModuleError.stack,
             debug: {
               __dirname,
               cwd: process.cwd(),
               nodeEnv: process.env.NODE_ENV,
-              hasDB: !!process.env.DB_HOST
+              hasDB: !!process.env.DB_HOST,
+              nodeModulesExists: fs.existsSync('/var/task/node_modules'),
+              nestjsConfigExists: fs.existsSync('/var/task/node_modules/@nestjs/config'),
+              nestjsTypeormExists: fs.existsSync('/var/task/node_modules/@nestjs/typeorm')
             },
             fileStructure
           });
