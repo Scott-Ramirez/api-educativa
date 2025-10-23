@@ -7,18 +7,35 @@ async function createNestApp() {
     try {
       // Intentar múltiples rutas para AppModule basado en el directorio de trabajo
       let AppModule;
+      const fs = require('fs');
+      const path = require('path');
+      
+      // Primero, exploremos la estructura de directorios
+      console.log('📁 Directorio actual:', process.cwd());
+      console.log('📁 __dirname:', __dirname);
+      
       const paths = [
         '../dist/src/app.module',
         '../dist/app.module', 
         '/var/task/dist/src/app.module',
         './dist/src/app.module',
-        'dist/src/app.module'
+        'dist/src/app.module',
+        path.join(process.cwd(), 'dist', 'src', 'app.module'),
+        path.join(__dirname, '..', 'dist', 'src', 'app.module')
       ];
       
       let lastError;
       for (const modulePath of paths) {
         try {
-          console.log(`Intentando cargar desde: ${modulePath}`);
+          console.log(`🔍 Intentando cargar desde: ${modulePath}`);
+          
+          // Verificar si el archivo existe
+          if (fs.existsSync(modulePath + '.js')) {
+            console.log(`✅ Archivo encontrado: ${modulePath}.js`);
+          } else {
+            console.log(`❌ Archivo NO encontrado: ${modulePath}.js`);
+          }
+          
           AppModule = require(modulePath).AppModule;
           console.log(`✅ AppModule cargado exitosamente desde: ${modulePath}`);
           break;
@@ -29,6 +46,24 @@ async function createNestApp() {
       }
       
       if (!AppModule) {
+        // Listar contenido del directorio para debugging
+        try {
+          const rootFiles = fs.readdirSync('/var/task');
+          console.log('📂 Contenido de /var/task:', rootFiles);
+          
+          if (rootFiles.includes('dist')) {
+            const distFiles = fs.readdirSync('/var/task/dist');
+            console.log('📂 Contenido de /var/task/dist:', distFiles);
+            
+            if (distFiles.includes('src')) {
+              const srcFiles = fs.readdirSync('/var/task/dist/src');
+              console.log('📂 Contenido de /var/task/dist/src:', srcFiles);
+            }
+          }
+        } catch (e) {
+          console.log('Error listando directorios:', e.message);
+        }
+        
         throw new Error(`AppModule no encontrado en ninguna ruta. Último error: ${lastError.message}`);
       }
       
