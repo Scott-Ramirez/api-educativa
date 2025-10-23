@@ -1,6 +1,10 @@
 // Punto de entrada para Vercel Serverless Functions
 const { NestFactory } = require('@nestjs/core');
-const { AppModule } = require('../dist/app.module');
+const path = require('path');
+
+// Usar ruta absoluta para encontrar app.module
+const appModulePath = path.join(__dirname, '..', 'dist', 'src', 'app.module');
+const { AppModule } = require(appModulePath);
 
 let app;
 
@@ -21,6 +25,9 @@ async function bootstrap() {
       await app.init();
     } catch (error) {
       console.error('Bootstrap error:', error);
+      console.error('Trying to load from:', appModulePath);
+      console.error('__dirname:', __dirname);
+      console.error('process.cwd():', process.cwd());
       throw error;
     }
   }
@@ -38,6 +45,11 @@ module.exports = async (req, res) => {
           DB_USERNAME: !!process.env.DB_USERNAME,
           DB_PASSWORD: !!process.env.DB_PASSWORD,
           DB_NAME: !!process.env.DB_NAME
+        },
+        paths: {
+          __dirname,
+          cwd: process.cwd(),
+          appModulePath
         }
       });
     }
@@ -51,7 +63,12 @@ module.exports = async (req, res) => {
     return res.status(500).json({ 
       message: 'Internal server error',
       error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      paths: {
+        __dirname,
+        cwd: process.cwd(),
+        appModulePath
+      }
     });
   }
 };
