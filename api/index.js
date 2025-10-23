@@ -46,14 +46,31 @@ async function createNestApp() {
         }
       }
       
-      // Intentar cargar UltraSimpleAppModule (solo @nestjs/core) desde carpeta build
+      // Intentar cargar ProgressiveAppModule primero, luego UltraSimple como fallback
       let AppModule;
+      const progressiveModulePath = '/var/task/build/dist/src/progressive-app.module';
       const ultraSimpleModulePath = '/var/task/build/dist/src/ultra-simple-app.module';
       
-      console.log(`🔍 Intentando cargar UltraSimpleAppModule desde: ${ultraSimpleModulePath}`);
+      console.log(`🔍 Intentando cargar ProgressiveAppModule desde: ${progressiveModulePath}`);
       
-      if (fs.existsSync(ultraSimpleModulePath + '.js')) {
-        console.log(`✅ Archivo ${ultraSimpleModulePath}.js existe`);
+      if (fs.existsSync(progressiveModulePath + '.js')) {
+        console.log(`✅ Archivo ${progressiveModulePath}.js existe`);
+        try {
+          AppModule = require(progressiveModulePath).ProgressiveAppModule;
+          console.log(`✅ ProgressiveAppModule cargado exitosamente`);
+        } catch (progressiveError) {
+          console.log(`❌ Error cargando ProgressiveAppModule:`, progressiveError.message);
+          console.log(`🔄 Fallback a UltraSimpleAppModule...`);
+          
+          if (fs.existsSync(ultraSimpleModulePath + '.js')) {
+            AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
+            console.log(`✅ UltraSimpleAppModule cargado como fallback`);
+          } else {
+            throw new Error(`Ambos módulos fallaron. Progressive error: ${progressiveError.message}`);
+          }
+        }
+      } else if (fs.existsSync(ultraSimpleModulePath + '.js')) {
+        console.log(`⚠️ ProgressiveAppModule no existe, usando UltraSimpleAppModule`);
         AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
         console.log(`✅ UltraSimpleAppModule cargado exitosamente`);
       } else {
