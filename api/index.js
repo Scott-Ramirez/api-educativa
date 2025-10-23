@@ -5,17 +5,31 @@ let app;
 async function createNestApp() {
   if (!app) {
     try {
-      // Intentar múltiples rutas para AppModule
+      // Intentar múltiples rutas para AppModule basado en el directorio de trabajo
       let AppModule;
-      try {
-        AppModule = require('../dist/src/app.module').AppModule;
-      } catch (e1) {
+      const paths = [
+        '../dist/src/app.module',
+        '../dist/app.module', 
+        '/var/task/dist/src/app.module',
+        './dist/src/app.module',
+        'dist/src/app.module'
+      ];
+      
+      let lastError;
+      for (const modulePath of paths) {
         try {
-          AppModule = require('../dist/app.module').AppModule;
-        } catch (e2) {
-          console.error('No se pudo cargar AppModule:', e1.message, e2.message);
-          throw new Error(`AppModule no encontrado. Intenté: dist/src/app.module y dist/app.module`);
+          console.log(`Intentando cargar desde: ${modulePath}`);
+          AppModule = require(modulePath).AppModule;
+          console.log(`✅ AppModule cargado exitosamente desde: ${modulePath}`);
+          break;
+        } catch (error) {
+          console.log(`❌ Falló ${modulePath}: ${error.message}`);
+          lastError = error;
         }
+      }
+      
+      if (!AppModule) {
+        throw new Error(`AppModule no encontrado en ninguna ruta. Último error: ${lastError.message}`);
       }
       
       app = await NestFactory.create(AppModule, {
