@@ -46,51 +46,35 @@ async function createNestApp() {
         }
       }
       
-      // Intentar cargar SimpleStudentsAppModule primero, luego Progressive como fallback
+      // Intentar cargar AppModule original desde carpeta build
       let AppModule;
-      const simpleStudentsModulePath = '/var/task/build/dist/src/simple-students-app.module';
-      const progressiveModulePath = '/var/task/build/dist/src/progressive-app.module';
-      const ultraSimpleModulePath = '/var/task/build/dist/src/ultra-simple-app.module';
+      const appModulePath = '/var/task/build/dist/src/app.module';
       
-      console.log(`🔍 Intentando cargar SimpleStudentsAppModule desde: ${simpleStudentsModulePath}`);
+      console.log(`🔍 Intentando cargar AppModule desde: ${appModulePath}`);
       
-      if (fs.existsSync(simpleStudentsModulePath + '.js')) {
-        console.log(`✅ Archivo ${simpleStudentsModulePath}.js existe`);
+      if (fs.existsSync(appModulePath + '.js')) {
+        console.log(`✅ Archivo ${appModulePath}.js existe`);
         try {
-          AppModule = require(simpleStudentsModulePath).SimpleStudentsAppModule;
-          console.log(`✅ SimpleStudentsAppModule cargado exitosamente`);
-        } catch (simpleStudentsError) {
-          console.log(`❌ Error cargando SimpleStudentsAppModule:`, simpleStudentsError.message);
-          console.log(`🔄 Fallback a ProgressiveAppModule...`);
+          AppModule = require(appModulePath).AppModule;
+          console.log(`✅ AppModule cargado exitosamente`);
+        } catch (appModuleError) {
+          console.log(`❌ Error cargando AppModule:`, appModuleError.message);
+          console.log(`Stack:`, appModuleError.stack);
           
-          if (fs.existsSync(progressiveModulePath + '.js')) {
-            try {
-              AppModule = require(progressiveModulePath).ProgressiveAppModule;
-              console.log(`✅ ProgressiveAppModule cargado como fallback`);
-            } catch (progressiveError) {
-              console.log(`❌ Error cargando ProgressiveAppModule:`, progressiveError.message);
-              AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
-              console.log(`✅ UltraSimpleAppModule cargado como último fallback`);
-            }
-          } else {
-            AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
-            console.log(`✅ UltraSimpleAppModule cargado como fallback`);
-          }
+          // Si el AppModule falla, mostrar el error detallado
+          return res.status(500).json({
+            error: 'Error loading AppModule',
+            message: appModuleError.message,
+            stack: appModuleError.stack,
+            debug: {
+              __dirname,
+              cwd: process.cwd(),
+              nodeEnv: process.env.NODE_ENV,
+              hasDB: !!process.env.DB_HOST
+            },
+            fileStructure
+          });
         }
-      } else if (fs.existsSync(progressiveModulePath + '.js')) {
-        console.log(`⚠️ SimpleStudentsAppModule no existe, usando ProgressiveAppModule`);
-        try {
-          AppModule = require(progressiveModulePath).ProgressiveAppModule;
-          console.log(`✅ ProgressiveAppModule cargado exitosamente`);
-        } catch (progressiveError) {
-          console.log(`❌ Error cargando ProgressiveAppModule:`, progressiveError.message);
-          AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
-          console.log(`✅ UltraSimpleAppModule cargado como fallback`);
-        }
-      } else if (fs.existsSync(ultraSimpleModulePath + '.js')) {
-        console.log(`⚠️ Solo UltraSimpleAppModule disponible`);
-        AppModule = require(ultraSimpleModulePath).UltraSimpleAppModule;
-        console.log(`✅ UltraSimpleAppModule cargado exitosamente`);
       } else {
         // Actualizar fileStructure para mostrar build también
         if (fileStructure.rootFiles && fileStructure.rootFiles.includes('build')) {
