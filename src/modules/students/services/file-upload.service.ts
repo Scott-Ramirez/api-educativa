@@ -4,10 +4,13 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs';
 import * as path from 'path';
+import { CloudinaryService } from './cloudinary.service';
 
 @Injectable()
 export class FileUploadService {
   private readonly logger = new Logger(FileUploadService.name);
+
+  constructor(private readonly cloudinaryService: CloudinaryService) {}
 
   /**
    * Configuración de Multer para subida de imágenes de estudiantes
@@ -100,7 +103,7 @@ export class FileUploadService {
   }
 
   /**
-   * Sube la imagen de un estudiante
+   * Sube la imagen de un estudiante a Cloudinary
    */
   async uploadStudentImage(
     studentId: number, 
@@ -115,35 +118,64 @@ export class FileUploadService {
       throw new Error('No se proporcionó archivo de imagen');
     }
 
-    // Crear directorio si no existe
-    const uploadsDir = this.isProduction() 
-      ? '/tmp/uploads/students' 
-      : path.join(process.cwd(), 'uploads', 'students');
-    
-    this.ensureDirectoryExists(uploadsDir);
+    try {
+      // Subir a Cloudinary
+      const cloudinaryResult = await this.cloudinaryService.uploadImage(
+        file.buffer,
+        file.originalname,
+        studentId
+      );
 
-    // Generar nombre único
-    const timestamp = Date.now();
-    const extension = path.extname(file.originalname);
-    const uniqueFileName = `student_${studentId}_${timestamp}${extension}`;
-    const filePath = path.join(uploadsDir, uniqueFileName);
+      this.logger.log(`✅ Imagen subida a Cloudinary: ${cloudinaryResult.secure_url}`);
 
-    // Guardar archivo
-    fs.writeFileSync(filePath, file.buffer);
-    
-    this.logger.log(`✅ Archivo guardado: ${filePath}`);
+      // Actualizar URL en base de datos
+      const imageUrl = cloudinaryResult.secure_url;
+      await studentsService.updateImageUrl(studentId, imageUrl, cloudinaryResult.public_id);
+      
+      this.logger.log(`✅ URL actualizada en BD: ${imageUrl}`);
+      
+      return {
+        message: 'Imagen subida exitosamente a Cloudinary',
+        imageUrl: cloudinaryResult.secure_url,
+        publicId: cloudinaryResult.public_id,
+        width: cloudinaryResult.width,
+        height: cloudinaryResult.height,
+        format: cloudinaryResult.format,
+        size: cloudinaryResult.bytes,
+      };
+    } catch (error) {
+      this.logger.error(`❌ Error subiendo imagen: ${error.message}`);
+      throw new Error(`Error subiendo imagen: ${error.message}`);
+    }
+  }
 
-    // Actualizar URL en base de datos
-    const imageUrl = `/uploads/students/${uniqueFileName}`;
-    await studentsService.updateImageUrl(studentId, imageUrl);
-    
-    this.logger.log(`✅ URL actualizada en BD: ${imageUrl}`);
-    
-    return {
-      message: 'Imagen subida exitosamente',
-      imageUrl,
-      fileName: uniqueFileName,
-    };
+  /**
+   * Elimina la imagen de un estudiante de Cloudinary
+   */
+  async deleteStudentImage(
+    studentId: number,
+    publicId: string,
+    studentsService: any
+  ): Promise<boolean> {
+    try {
+      this.logger.log(`🗑️ Eliminando imagen del estudiante ${studentId}: ${publicId}`);
+      
+      // Eliminar de Cloudinary
+      const deleted = await this.cloudinaryService.deleteImage(publicId);
+      
+      if (deleted) {
+        // Actualizar BD para quitar la URL
+        await studentsService.updateImageUrl(studentId, null);
+        this.logger.log(`✅ Imagen eliminada y BD actualizada`);
+        return true;
+      } else {
+        this.logger.warn(`⚠️ No se pudo eliminar la imagen de Cloudinary`);
+        return false;
+      }
+    } catch (error) {
+      this.logger.error(`❌ Error eliminando imagen: ${error.message}`);
+      return false;
+    }
   }
 
   /**

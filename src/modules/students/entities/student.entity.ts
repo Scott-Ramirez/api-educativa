@@ -21,6 +21,9 @@ export class Student {
   @Column({ nullable: true })
   foto_url: string;
 
+  @Column({ nullable: true })
+  cloudinary_public_id: string;
+
   @Column({ nullable: true, type: 'text' })
   observaciones: string;
 

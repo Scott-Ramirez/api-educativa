@@ -131,15 +131,22 @@ export class StudentsService {
     }
   }
 
-  async updateImageUrl(id: number, imageUrl: string) {
+  async updateImageUrl(id: number, imageUrl: string, publicId?: string) {
     console.log(`🖼️ [StudentsService] Actualizando URL de imagen para estudiante ID: ${id}`);
     
     try {
       const student = await this.findOne(id);
       student.foto_url = imageUrl;
+      
+      // Guardar también el public_id de Cloudinary si se proporciona
+      if (publicId) {
+        student.cloudinary_public_id = publicId;
+      }
+      
       await this.studentRepository.save(student);
       
       console.log(`✅ [StudentsService] URL de imagen actualizada: ${imageUrl}`);
+      console.log(`✅ [StudentsService] Public ID guardado: ${publicId}`);
       return student;
     } catch (error) {
       console.error(`❌ [StudentsService] Error actualizando URL de imagen:`, error);
