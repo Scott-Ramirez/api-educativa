@@ -38,12 +38,15 @@ import { InvitesModule } from './modules/invites/invites.module';
       username: process.env.DB_USER || 'root',
       password: process.env.DB_PASS || '',
       database: process.env.DB_NAME || 'educativa_db',
-      autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production', // Solo en desarrollo
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      migrations: [__dirname + '/migrations/*{.ts,.js}'],
+      synchronize: false, // ⚠️ DESHABILITADO - usar migraciones
+      migrationsRun: true, // Ejecutar migraciones automáticamente
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
       connectTimeout: 60000,
       acquireTimeout: 60000,
       timezone: 'Z',
+      logging: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
     }),
 
     // 📚 Módulos principales
