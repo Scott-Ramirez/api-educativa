@@ -9,6 +9,9 @@ import { RolesGuard } from './modules/auth/roles.guard';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
+// 🏥 Health Check
+import { HealthController } from './health.controller';
+
 // 📦 Módulos del sistema
 import { StudentsModule } from './modules/students/students.module';
 import { SubjectsModule } from './modules/subjects/subjects.module';
@@ -56,6 +59,7 @@ import { InvitesModule } from './modules/invites/invites.module';
     AuthModule,
     InvitesModule,
   ],
+  controllers: [HealthController],
   providers: [
     Reflector,
     // 🛡️ Guard global de roles
