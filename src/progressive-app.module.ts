@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
+import { BasicHealthController } from './basic-health.controller';
 
 @Module({
-  controllers: [],
+  controllers: [BasicHealthController],
   providers: [
     {
       provide: 'APP_CONFIG',
@@ -9,7 +10,8 @@ import { Module } from '@nestjs/common';
         message: 'API Educativa funcionando correctamente',
         timestamp: new Date().toISOString(),
         progressive: true,
-        hasConfig: true
+        hasConfig: true,
+        hasController: true
       }
     }
   ],

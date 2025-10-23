@@ -8,12 +8,13 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProgressiveAppModule = void 0;
 const common_1 = require("@nestjs/common");
+const basic_health_controller_1 = require("./basic-health.controller");
 let ProgressiveAppModule = class ProgressiveAppModule {
 };
 exports.ProgressiveAppModule = ProgressiveAppModule;
 exports.ProgressiveAppModule = ProgressiveAppModule = __decorate([
     (0, common_1.Module)({
-        controllers: [],
+        controllers: [basic_health_controller_1.BasicHealthController],
         providers: [
             {
                 provide: 'APP_CONFIG',
@@ -21,7 +22,8 @@ exports.ProgressiveAppModule = ProgressiveAppModule = __decorate([
                     message: 'API Educativa funcionando correctamente',
                     timestamp: new Date().toISOString(),
                     progressive: true,
-                    hasConfig: true
+                    hasConfig: true,
+                    hasController: true
                 }
             }
         ],
