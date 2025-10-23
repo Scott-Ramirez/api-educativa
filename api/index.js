@@ -32,17 +32,27 @@ async function createNestApp() {
         throw new Error(`No se encontró carpeta dist. Estructura: ${JSON.stringify(fileStructure)}`);
       }
       
-      // Intentar cargar AppModule
+      // Intentar cargar AppModule desde carpeta build
       let AppModule;
-      const modulePath = '/var/task/dist/src/app.module';
+      const modulePath = '/var/task/build/dist/src/app.module';
       
-      console.log(`� Intentando cargar AppModule desde: ${modulePath}`);
+      console.log(`🔍 Intentando cargar AppModule desde: ${modulePath}`);
       
       if (fs.existsSync(modulePath + '.js')) {
         console.log(`✅ Archivo ${modulePath}.js existe`);
         AppModule = require(modulePath).AppModule;
         console.log(`✅ AppModule cargado exitosamente`);
       } else {
+        // Actualizar fileStructure para mostrar build también
+        if (fileStructure.rootFiles && fileStructure.rootFiles.includes('build')) {
+          fileStructure.buildFiles = fs.readdirSync('/var/task/build');
+          if (fileStructure.buildFiles.includes('dist')) {
+            fileStructure.buildDistFiles = fs.readdirSync('/var/task/build/dist');
+            if (fileStructure.buildDistFiles.includes('src')) {
+              fileStructure.buildDistSrcFiles = fs.readdirSync('/var/task/build/dist/src');
+            }
+          }
+        }
         throw new Error(`Archivo ${modulePath}.js no encontrado. Estructura: ${JSON.stringify(fileStructure)}`);
       }
       
